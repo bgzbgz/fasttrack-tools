@@ -111,6 +111,14 @@
                 toolsEl.innerHTML = tools.map(tool => createToolCard(tool)).join('');
                 toolsEl.classList.remove('hidden');
 
+                // Debug: log first tool URL
+                if (tools.length > 0) {
+                    const firstUrl = `https://fastracktoolssystemdeploys.netlify.app/${tools[0].tool_slug}`;
+                    console.log('First tool URL:', firstUrl);
+                    console.log('First tool slug:', tools[0].tool_slug);
+                    console.log('First tool name:', tools[0].tool_name);
+                }
+
             } catch (error) {
                 console.error('Error loading tools:', error);
                 loadingEl.classList.add('hidden');
@@ -128,7 +136,10 @@
         }
 
         function createToolCard(tool) {
-            const toolUrl = tool.deployment?.netlify_url || `/${tool.tool_slug}.html`;
+            // Construct correct Netlify URL - use the slug to build the path
+            const netlifyBaseUrl = 'https://fastracktoolssystemdeploys.netlify.app';
+            const toolUrl = `${netlifyBaseUrl}/${tool.tool_slug}`;
+
             const statusColor = getStatusColor(tool.status);
             const qaScore = tool.qa_score || 'N/A';
             const qaColor = getQaColor(tool.qa_score);
