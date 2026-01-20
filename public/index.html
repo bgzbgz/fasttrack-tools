@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fast Track Tools</title>
+    <title>Fast Track Tools Directory</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @font-face {
@@ -22,22 +22,172 @@
         .ft-headline { font-family: 'Plaak', sans-serif; }
         .ft-body { font-family: 'Riforma', sans-serif; }
         .ft-mono { font-family: 'Monument Grotesk', monospace; }
+
+        .tool-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body class="bg-black text-white min-h-screen">
     <div class="container mx-auto px-4 py-16">
+        <!-- Header -->
         <header class="text-center mb-16">
             <h1 class="ft-headline text-6xl mb-4">FAST TRACK TOOLS</h1>
             <p class="ft-body text-xl text-gray-400">Strategic Business Tools by Fast Track Ltd</p>
+            <p class="ft-mono text-sm text-gray-500 mt-4">Click any tool to launch it</p>
         </header>
 
-        <div id="tools-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="bg-white text-black border-4 border-yellow-400 p-6">
-                <h2 class="ft-headline text-2xl mb-2">Tools Directory</h2>
-                <p class="ft-body">Generated tools will be accessible via their direct URLs.</p>
-                <p class="ft-mono text-sm text-gray-600 mt-4">Powered by Fast Track Tool Generator</p>
+        <!-- Loading State -->
+        <div id="loading" class="text-center py-12">
+            <div class="inline-block animate-pulse">
+                <div class="ft-headline text-2xl mb-2">LOADING TOOLS...</div>
+                <div class="ft-mono text-sm text-gray-500">Fetching from database</div>
             </div>
         </div>
+
+        <!-- Error State -->
+        <div id="error" class="hidden bg-red-900 border border-red-500 p-6 mb-8">
+            <h2 class="ft-headline text-xl mb-2">ERROR LOADING TOOLS</h2>
+            <p class="ft-body text-sm" id="error-message"></p>
+        </div>
+
+        <!-- Tools Grid -->
+        <div id="tools-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+            <!-- Tools will be inserted here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty" class="hidden text-center py-12 border-4 border-yellow-400">
+            <div class="ft-headline text-3xl mb-4">NO TOOLS YET</div>
+            <p class="ft-body text-gray-400">Generate your first tool to see it here</p>
+        </div>
     </div>
+
+    <script>
+        // IMPORTANT: Update this URL to your ngrok tunnel or backend URL
+        const BACKEND_URL = 'https://acaudal-nonprominently-nichol.ngrok-free.dev';
+        const TOOLS_API = `${BACKEND_URL}/api/tools`;
+
+        async function loadTools() {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const toolsEl = document.getElementById('tools-list');
+            const emptyEl = document.getElementById('empty');
+
+            try {
+                console.log('Fetching tools from:', TOOLS_API);
+
+                const response = await fetch(TOOLS_API, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Tools loaded:', data);
+
+                loadingEl.classList.add('hidden');
+
+                if (!data.success || !data.data || data.data.length === 0) {
+                    emptyEl.classList.remove('hidden');
+                    return;
+                }
+
+                const tools = data.data;
+
+                // Sort by created_at (newest first)
+                tools.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                // Render tools
+                toolsEl.innerHTML = tools.map(tool => createToolCard(tool)).join('');
+                toolsEl.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error loading tools:', error);
+                loadingEl.classList.add('hidden');
+                errorEl.classList.remove('hidden');
+                document.getElementById('error-message').textContent = error.message;
+
+                // Show fallback message
+                emptyEl.innerHTML = `
+                    <div class="ft-headline text-2xl mb-4">OFFLINE MODE</div>
+                    <p class="ft-body text-gray-400 mb-2">Could not connect to backend</p>
+                    <p class="ft-mono text-sm text-gray-500">${error.message}</p>
+                `;
+                emptyEl.classList.remove('hidden');
+            }
+        }
+
+        function createToolCard(tool) {
+            const toolUrl = tool.deployment?.netlify_url || `/${tool.tool_slug}.html`;
+            const statusColor = getStatusColor(tool.status);
+            const qaScore = tool.qa_score || 'N/A';
+            const qaColor = getQaColor(tool.qa_score);
+            const createdDate = new Date(tool.created_at).toLocaleDateString();
+
+            return `
+                <a href="${toolUrl}" target="_blank" class="tool-card block bg-white text-black border-4 ${statusColor} p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <h2 class="ft-headline text-2xl flex-1">${escapeHtml(tool.tool_name)}</h2>
+                        <span class="ft-mono text-xs bg-black text-white px-2 py-1">${qaScore}</span>
+                    </div>
+
+                    ${tool.spec?.module_number ? `
+                        <div class="ft-body text-sm mb-2">
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 text-xs">
+                                Module ${tool.spec.module_number} • Sprint ${tool.spec.sprint_number || 1}
+                            </span>
+                        </div>
+                    ` : ''}
+
+                    <p class="ft-body text-sm text-gray-600 mb-4">
+                        ${escapeHtml(tool.spec?.tool_purpose || tool.tool_name)}
+                    </p>
+
+                    <div class="flex items-center justify-between">
+                        <span class="ft-mono text-xs text-gray-500">${createdDate}</span>
+                        <span class="ft-body text-sm font-bold">LAUNCH →</span>
+                    </div>
+                </a>
+            `;
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'completed': return 'border-green-400';
+                case 'generating': return 'border-yellow-400';
+                case 'failed': return 'border-red-400';
+                default: return 'border-gray-400';
+            }
+        }
+
+        function getQaColor(score) {
+            if (!score) return 'bg-gray-500';
+            if (score >= 90) return 'bg-green-500';
+            if (score >= 70) return 'bg-yellow-500';
+            return 'bg-red-500';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load tools on page load
+        loadTools();
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadTools, 30000);
+    </script>
 </body>
 </html>
