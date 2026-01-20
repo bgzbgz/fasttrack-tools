@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast Track Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @font-face {
+            font-family: 'Plaak';
+            src: url('/fonts/Plaak3Trial-43-Bold.otf') format('opentype');
+            font-weight: bold;
+        }
+        @font-face {
+            font-family: 'Riforma';
+            src: url('/fonts/RiformaLL-Regular.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Monument Grotesk';
+            src: url('/fonts/MonumentGrotesk-Mono.otf') format('opentype');
+        }
+        .ft-headline { font-family: 'Plaak', sans-serif; }
+        .ft-body { font-family: 'Riforma', sans-serif; }
+        .ft-mono { font-family: 'Monument Grotesk', monospace; }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen">
+    <div class="container mx-auto px-4 py-16">
+        <header class="text-center mb-16">
+            <h1 class="ft-headline text-6xl mb-4">FAST TRACK TOOLS</h1>
+            <p class="ft-body text-xl text-gray-400">Strategic Business Tools by Fast Track Ltd</p>
+        </header>
+
+        <div id="tools-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white text-black border-4 border-yellow-400 p-6">
+                <h2 class="ft-headline text-2xl mb-2">Tools Directory</h2>
+                <p class="ft-body">Generated tools will be accessible via their direct URLs.</p>
+                <p class="ft-mono text-sm text-gray-600 mt-4">Powered by Fast Track Tool Generator</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
